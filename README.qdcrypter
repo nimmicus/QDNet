@@ -1,0 +1,42 @@
+SYNTAX: qdcrypter [OPTION] [FILE]
+
+VARIABLES:
+QDNET_HOME="/etc/qdnet"
+QDNET_GPG="$QDNET_HOME/.gnupg"
+gpgopts="--homedir $QDNET_GPG -r $PGP_USR"
+PGP_USR=`whoami`
+
+
+OPTIONS:
+-g generates a new key pair for the qdnet daemon and
+stores it in $QDNET_GPG. 
+
+-c encrypts a file using the preset options stored in the
+gpgopts variable.
+
+-d decrypts a file using the preset options stored in the
+gpgopts variable.
+
+-l lists all keys stored in QDNET_GPG
+
+-r deletes (remove) all keys stored in QDNET_GPG
+
+
+NOTES:
+To copy all of the keys (private and public) for a given keyring, 
+you only need to copy the directory to where you want it... 
+
+Each user has their own gpg directory. Specifying the homedir
+for qdnet will not affect other users at all
+
+The PGP_USR variable is equal to `whoami` which returns
+the currently logged in user. This could cause a possible
+permissions error if the user isn't part of the qdnet group.
+
+SUGGESTION: parse the group file and automatically add the user
+to the qdnet group. The advantage of this is that there is less
+user intervention.
+
+The gpgopts variable is used so that the options for all functions
+are constant. I.e. the script will always list keys, decrypt, encrypt,
+and generate keys for the qdnet daemon and no one else.

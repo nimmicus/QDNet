@@ -1,0 +1,52 @@
+   ___  ____  _   _      _   
+  / _ \|  _ \| \ | | ___| |_ 
+ | | | | | | |  \| |/ _ \ __|
+ | |_| | |_| | |\  |  __/ |_ 
+  \__\_\____/|_| \_|\___|\__|
+
+
+version 0.1:
+initial developer release
+capable of connecting to unsecure wireless networks
+
+version 0.2:
+fixed icon flickering
+fixed script names not running when the network name contain spaces
+fixed qdlistener bg process not ending
+added commandline interface qdnetc
+added qdask to handle questioning user
+added support for WEP, WPA, WPA2
+sized down icon images from 256x256 to 64x64
+fixed ownership on the qdnet pipe device
+icon color for networks is representative of the network's signal strength
+added a disconnect icon
+decision to use bash shell rather than bourne shell
+
+version 0.25:
+password location was made uniform through the $PASSWD_LOC
+qdnetc asks for a password only when necessary
+qdnetc gives proper output on the commandline regarding connection status
+qdnetc exits when no networks are available
+renamed qdnet daemon to qdnetd
+keeps a history file of the latest networks connected too
+logs connection success/failure in /var/log/messages
+security fix done to qdlistener by ensuring it had a proper path/owner
+security fix done to qdnet by ensuring only root has write permissions
+all shebang lines changed over to bash
+chmod desktop icons
+added networks icon to desktop
+
+version 0.3:
+added manpages for qdnetc and qdnetd
+networks icon is generated for all users on the system
+scripts won't run for non-root users (except qdnetc)
+qdnet_config renamed to qdnet.conf
+qdnet_history renamed to qdnet.history
+init scripts written for gentoo
+rc-script for connecting at boot on the Gentoo Linux Distro
+log file has been decided to be kept in /var/log/qdnet.log
+senses connection lost & attempts to reconnect 1 file in such an event
+add getopts for qdnetd
+qdnetd traps control-c to ensure that qdlistener is killed
+scripts are run before, during disconnection, or after a network connection
+upon startup autoconnect to known networks

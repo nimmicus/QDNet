@@ -1,0 +1,88 @@
+#!/bin/bash
+
+# ensure that only root can run this program
+. qdcheck
+
+# exit error codes
+E_INVALID_ARG=128
+
+# ask the user for the password in the commandline fashion
+ask_commandline() {
+	echo "hello world"
+}
+
+# ask the user for the password in the gui fashion after
+# determining which GUI method to use (use the prettiest one available)
+ask_gui() {
+	type -P zenity &>/dev/null
+	
+	if [ $? -eq 0 ]
+	then
+		ask_zenity $1
+	else
+		ask_dialog $1
+	fi
+}
+
+# ask the user for the password using dialog
+ask_dialog() {
+	# get the configuration
+	source /etc/qdnet/qdnet.conf
+
+	# ask user for pw
+	$TERMINAL -e "sh -c \"dialog --title 'network password' --inputbox 'Enter password for $1' 0 0 2>'/tmp/qdnet/networkpw.$USER.tmp' || rm '/tmp/qdnet/networkpw.$USER.tmp'\""
+
+	# wait for the file to be created/deleted
+	sleep 1s
+
+	# read the network key
+	if [ -f "/tmp/qdnet/networkpw.$USER.tmp" ]
+	then
+		key=`cat "/tmp/qdnet/networkpw.$USER.tmp"`
+		echo "key has been acquired."
+	else
+		exit 1
+	fi
+}
+
+# ask the user for the password using zenity
+ask_zenity() {
+	# ask user for pw
+	key=`zenity --entry --hide-text --title="network password" --text "Enter password for $1"`
+
+	if [ $? -eq 0 ]
+	then
+		echo "key has been acquired."
+	else
+		exit 1
+	fi
+}
+
+# prints help
+print_help() {
+	echo "TODO: Help coming soon"
+}
+
+# prints invalid option dialog
+print_invalid_option() {
+	echo "Try \`qdask -h' for more information."
+}
+
+# end if there are not enough paramters
+if [ $# -eq 0 ]
+then
+	echo "Quiting -- Invalid number of parameters"
+	exit $E_INVALID_ARG
+fi
+
+# parses parameters
+while getopts "hgz:d:c:" opt; do
+	case "$opt" in
+		h) print_help 0; exit 0;;
+		g) ask_gui "$OPTARG";;
+		z) ask_zenity "$OPTARG";;
+		d) ask_dialog "$OPTARG";;
+		c) ask_commandline "$OPTARG";;
+		?) print_invalid_option; exit $E_INVALID_ARG;;
+	esac
+done

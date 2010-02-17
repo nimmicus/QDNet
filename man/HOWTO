@@ -1,0 +1,39 @@
+Here is how to the qdnetd file was made.  
+This howto explains how qdnetd was created. All other
+manpages should be made in a similar fashion.  Just
+rename the files and follow the steps.
+
+1) Make a text file similar to the qdnetd file
+
+2) Run this command to create the file nroff needs
+   to parse.  You can also view the output to ensure
+   everything looks right.
+sed -f make_manpage.sed qdnetd | tee qdnetd.tmp | less
+
+3) Run this next command in order to make the man page
+nroff -e -mandoc qdnetd.tmp | less -s
+
+4) Run the command below in order to figure out what
+   format your man pages are stored in.  It will either
+   be bzip2 (bz2) or gzip (gzip).
+MAN_FORMAT="`ls /usr/share/man/man1/a* | head -n 1 | sed -e 's/^[[:print:]]*\(bz2\)$/\1/' -e 's/^[[:print:]]*\(gzip\)$/\1/'`" && echo "Your man page format is: $MAN_FORMAT"
+
+5) Move your file to the 8 category.
+mv qdnetd.tmp qdnetd.8
+
+6) If your man pages were stored in the bzip2 format then type:
+bzip2 qdnetd.8
+otherwise for gzip you need to type:
+gzip qdnetd.8
+
+7) Now move that manpage to the proper man page directory and
+   category on the system (8 in our case) like so.  You will need
+   to be root in order to do this.
+cp qdnetd.8.bz2 /usr/share/man/man8/
+
+8) Lastly you need to update your database so your system recognizes
+   the new man page by running the following command.  You will also
+   need to be root to do this.
+updatedb
+
+DONE!

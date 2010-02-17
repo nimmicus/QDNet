@@ -1,0 +1,112 @@
+#!/bin/bash
+
+# ensure that only root can run this program
+. qdcheck
+
+E_UNID_ATTR=65
+E_NET_SCAN=69
+
+# this function scans for available networks and extracts pertinent information
+scan_networks() {
+# first line greps all the things were interested in
+# second line prepares the data in the form ATTRIBUTE:VALUE
+# third line keeps only the VALUE
+IWLIST_READ=`iwlist $1 scan 2>&1 | grep -e "ESSID" -e "Quality" -e "Encryption key" -e "WEP" -e "WPA" | \
+sed -e "s/: /:/g" -e "s/[[:blank:]]*Signal[[:blank:][:print:]]*$//g" -e "s/\"//g" -e "s/=/:/g" \
+-e "s/[[:blank:]]*\([[:alpha:]]*:[[:print:]]*\)$/\1/g"`
+
+LINE_COUNT=`echo "$IWLIST_READ" | wc -l`
+if [ $LINE_COUNT -lt 3 ]
+then
+	exit $E_NET_SCAN
+fi
+}
+
+# save current unqine network to master list
+save_network() {
+	# if we have been notified to save the current work
+	# ensure we know the network's security type
+	#echo "`echo "$type_val" | wc -c`"
+	if [ -z $type_val 2>/dev/null ]
+	then
+		if [ "$secured_val" == "off" ]
+		then
+			type_val="Unsecured"
+		else
+			type_val="Unknown"
+		fi
+	fi
+
+	# save the network
+	SINGLE_NETWORK="$essid_val$tab$quality_val$tab$secured_val$tab$type_val$newline";
+	NETWORK_LIST="$NETWORK_LIST$SINGLE_NETWORK";
+
+	# wipe out the type_val because its an accumulator
+	type_val=""
+
+	# reset the flags & wait for next save
+	essid_flag=1
+	quality_flag=1
+	secured_flag=1
+}
+
+# formats raw network data into string array variable
+# this function also ensures that the network information outputs in proper order
+format_networks() {
+	NETWORK_LIST=""
+
+	# if the flag in question below is 0 then the current network...
+	essid_flag=1 # ...essid info is known
+	quality_flag=1 # ...quality info is known
+	secured_flag=1 # ...security being on or off is known
+
+	newline=$'\n'
+	tab=$'\t'
+	while read line; do
+		# get attribute and associative value
+		attr=`echo $line | cut -d ':' -f1`
+		value=`echo $line | cut -d ':' -f2`
+
+		# save current network when all the data for the current network is available
+		if [ `expr $essid_flag + $quality_flag + $secured_flag` -eq 0 -a "$attr" != "IE" ]; then save_network; fi
+
+		# record all the attributes for the current network
+		case $attr in
+			"ESSID") if [ $essid_flag -eq 1 ]; then essid_val="$value"; essid_flag=0; fi;;
+			"Quality") value=`echo "scale=2; $value*100+100" | bc | sed -e "s/\.[[:digit:]]*//"`; if [ $quality_flag -eq 1 ]; then quality_val="$value"; quality_flag=0; fi;;
+			"Encryptionkey") if [ $secured_flag -eq 1 ]; then secured_val="$value"; secured_flag=0; fi;;
+			"IE") if [ -z "$type_val" ]; then type_val="$value"; else type_val="$type_val@$value"; fi;;
+			*) echo "Error: Unidentified attribute"; exit $E_UNID_ATTR;;
+		esac
+	done <<< "$IWLIST_READ"
+
+	# to add last network
+	save_network
+}
+
+# removes duplicate networks from the string array variable
+remove_duplicates() {
+TEMP=""
+NETWORK_LIST=`echo "$NETWORK_LIST" | sort -r`
+while read line; do
+	essid=`echo "$line" | cut -d '	' -f1`
+	
+	# record new network's highest quality signal
+	if [ "$TEMP" != "$essid" -o "$TEMP" == "" ]
+	then
+		quality=`echo "$line" | cut -d '	' -f2`
+		quality=`echo "scale=2;$quality-100" | bc`
+		line=`echo $line | sed -e "s/[[:blank:]][[:digit:]]*[[:blank:]]\([o][nf]*\)/	$quality	\1/" \
+		-e "s/on /on	/" -e "s/off /off	/"` # fixes a bug in the output between on/off enc type
+		NETWORK_LIST2="$NETWORK_LIST2$line$newline"
+		TEMP="$essid"
+	fi
+done <<< "$NETWORK_LIST"
+}
+
+scan_networks $1
+format_networks
+remove_duplicates
+
+# remove newline at the end
+echo "$NETWORK_LIST2" | grep -v -e "^$"

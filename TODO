@@ -1,0 +1,56 @@
+Quick & Dirty Networking Todo List
+
+0.2
+X Change the removal of old networks to the same as the users timeout
+X Add disconnect network
+X Add X dialog for password
+X Add WPA support
+X Add WPA2 support
+
+0.3
+X Security: pipe won't execute foreign code
+X Append password to qdnet.pwd file when connection works (don't append unnecessarily)
+X Save history file for connected networks when connecting works (last connected at top, max saves come from config file)
+X Kernel Log major events
+X Don't allow run unless root
+X Autoconnect to known good networks in history upon startup/visibility
+X Run script before and after connecting and disconnecting
+X Support signal for ^C  on qdnet so that qdlistener is killed when running qdnet directly
+X Setup getopts
+X Notify when connection lost
+X Automatically reconnect
+X QDNet logfile /var/log
+X Connect at boot (Gentoo)
+
+0.4 Alpha
+Encrypt qdnet.pwd
+Check everything especially error handling & use variables
+X Create man pages
+Package for Gentoo
+Log everything to QDNet logfile
+
+0.41 Alpha
+Connect at boot (Arch, Ubuntu)
+Package for Arch, Ubuntu
+Fixes
+
+0.43-4 Alpha
+Fixes
+
+0.45 Alpha
+Connect to hidden networks
+Handle wired network
+
+0.46-9 Alpha
+Fixes
+
+0.5
+Fixes
+
+0.6
+Fixes
+
+0.7 Beta
+
+0.X
+VPN capabilities

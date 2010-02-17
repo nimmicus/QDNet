@@ -1,0 +1,30 @@
+#!/sbin/runscript
+# Copyright (c) 2010 Alwyn Malachi Berkeley, Marcos Di Pietro,
+# Lionel Gregory Nimmo, Leonardo Sanchez
+# Distributed under the terms of the BSD License
+# $Header: $
+
+depend() {
+	need checkroot
+	need net
+}
+
+start() {
+	ebegin "Starting QD Networking"
+	start-stop-daemon --start --quiet --background --make-pidfile --pidfile /var/run/qdnetd.pid \
+		--exec /usr/sbin/qdnetd -- --pid-file /var/run/qdnetd.pid
+	eend $?
+}
+
+stop() {
+	ebegin "Stopping QD Networking"
+	# note to self: change retry to 1 second more than $TIMEOUT
+	start-stop-daemon --stop --signal 2 --retry 30 --quiet --pidfile /var/run/qdnetd.pid --name qdnetd
+	eend $?
+}
+
+restart() {
+	stop
+	sleep 1s
+	start
+}

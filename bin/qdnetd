@@ -1,0 +1,439 @@
+#!/bin/bash
+
+# ensure that only root can run this program
+. qdcheck
+
+# cleanup in the case of an abnormal session
+trap cleanup 1 2 3 6 15
+
+LAST_SCAN='' # holds the wireless networks found during last scan
+VERBOSE=1 # prints to screen & logfile when 0, otherwise just logfile
+KEEP_LOG=0 # keeps a log file when 0
+LOG_LOC="/var/log/qdnet.log" # location of the log file
+
+# cleans up after the program
+cleanup() {
+	# kill the background process that was started
+	killall -9 -q qdlistener
+	exit 0
+}
+
+# this function scans for available networks
+scan_networks() {
+	LAST_SCAN=`qdlist wlan0`
+
+	while [ -z "$LAST_SCAN" ]
+	do
+		echo "Error: Unable to scan. Device was busy. Trying Again."
+		LAST_SCAN=`qdlist wlan0`
+
+		sleep 3s
+	done
+}
+
+# this function generates an icon for a network found
+generate_icon() {
+# create the desktop icon for networks if need be
+if [ "$3" == "networks_icon" ]
+then
+users=`grep 'qdnet:' /etc/group | cut -d':' -f 4 | tr ',' ' '`
+
+for user in $users
+do
+    user_home_dir=`su $user -c 'echo $HOME'`
+    
+    # create the networks icon
+cat <<ICON_FILE > "$user_home_dir/Desktop/networks.desktop"
+#!/usr/bin/env xdg-open
+
+[Desktop Entry]
+Name=My Networks
+Exec=$FILE_MANAGER "/tmp/qdnet/networks"
+Type=Application
+Comment=Available networks
+Encoding=UTF-8
+Icon=/usr/share/qdnet/icons/net-globe-64.png
+ICON_FILE
+chown root:qdnet "$user_home_dir/Desktop/networks.desktop"
+chmod g+rx "$user_home_dir/Desktop/networks.desktop"
+done
+
+return
+fi
+
+timestamp=`date '+%s'`
+
+logoType $2 $3
+
+# check qdteller to ensure there is no foul play
+QDTELLER_PATH=`type -P qdteller 2>/dev/null`
+ls -l "$QDTELLER_PATH" | grep "root" >/dev/null
+if [ $? -ne 0 ]
+then
+	echo "Incorrect ownership on qdteller. Foul play suspected."
+	echo -n "Killing thyself..."
+	killall -9 qdnetd
+fi
+
+cat <<ICON_FILE > "/tmp/qdnet/networks/$1.desktop"
+#!/usr/bin/env xdg-open
+
+[Desktop Entry]
+Name=$1
+Exec=$QDTELLER_PATH "$1"
+Type=Application
+Comment=Available network named $1
+Encryption=$3
+Enc_Type=$4
+Encoding=UTF-8
+Icon=/usr/share/qdnet/icons/$QUALITY_ICON
+Timestamp=$timestamp
+ICON_FILE
+
+chown root:qdnet "/tmp/qdnet/networks/$1.desktop"
+chmod g+x "/tmp/qdnet/networks/$1.desktop"
+}
+
+# this function generates a script for a network found
+generate_script() {
+# note to self: change wlan0 to INTERFACE_CHOSEN ($2)
+if [ "$1" == "Disconnect" ]; then
+cat <<SCRIPT_FILE > "/tmp/qdnet/scripts/$1"
+#!/bin/sh
+
+# run the disconnect script for all qdnet group users
+users=`grep 'qdnet:' /etc/group | cut -d':' -f 4 | tr ',' ' '`
+for user in $users
+do
+	user_home_dir="`su $user -c 'echo $HOME'`"
+	su $user -c "\$user_home_dir/.qdnet/disconnect" 2>/dev/null
+done
+$DHCP_CLIENT -k wlan0
+ifconfig wlan0 up
+notify-send -i /usr/share/qdnet/icons/signal-gray-64.png 'Disconnected' 'You are now disconnected'
+SCRIPT_FILE
+else
+cat <<SCRIPT_FILE > "/tmp/qdnet/scripts/$1"
+#!/bin/sh
+
+# let the user know were attempting to connect to a network
+notify-send -i /usr/share/qdnet/icons/signal-red-64.png 'Attempt' "Attempting to connect to $1"
+
+# shell exit status code
+E_EMPTY_PW=65
+
+# run the disconnect script for all qdnet group users
+users=`grep 'qdnet:' /etc/group | cut -d':' -f 4 | tr ',' ' '`
+for user in $users
+do
+	user_home_dir="`su $user -c 'echo $HOME'`"
+	su $user -c "\$user_home_dir/.qdnet/disconnect" 2>/dev/null
+done
+
+# force release of IP
+$DHCP_CLIENT -k wlan0
+
+# ensure interface is up
+ifconfig wlan0 up
+
+# if the encryption is on...
+if [ "$2" != "off" ]
+then
+	# ...check if the essid and password is already in qdnet.pwd
+	cat "$PASSWD_LOC/qdnet.pwd" | grep "$1" >/dev/null
+	
+	# ...otherwise get it
+	if [ \$? -ne 0 ]; then
+		# ask for the network key from the user
+		. qdask -g "$1"
+		# store essid and key in qdnet.pwd
+		echo "$1	\$key" > "$PASSWD_LOC/qdnet.pwd"
+	fi
+
+	# ...configure for encrypted network
+	echo "$3" | grep -e "WEP" >/dev/null
+	if [ \$? -eq 0 ]; then qdenc wlan0 "$1" "WEP"; fi
+
+	echo "$3" | grep -e "WPA" >/dev/null	
+	if [ \$? -eq 0 ]; then qdenc wlan0 "$1" "WPA"; fi
+
+	echo "$3" | grep -e "Unknown" >/dev/null	
+	if [ \$? -eq 0 ]; then qdenc wlan0 "$1" "Unknown"; fi
+# if the encryption is off...
+else
+	# configure unsecure network
+	iwconfig wlan0 essid "$1"
+fi
+
+# run the before script for all qdnet group users
+users=`grep 'qdnet:' /etc/group | cut -d':' -f 4 | tr ',' ' '`
+for user in $users
+do
+	user_home_dir="`su $user -c 'echo $HOME'`"
+	su $user -c "\$user_home_dir/.qdnet/before" 2>/dev/null
+done
+
+# connect to network(negotiate IP with dhcp server)
+$DHCP_CLIENT wlan0
+
+# notify user of their connected/disconnect status
+if [ \$? -eq 0 ]; then
+	cmd="notify-send -i /usr/share/qdnet/icons/signal-green-64.png 'Connected' 'You are connected on $1'"
+	echo "connection established."
+	
+	# add this network to the top of the history file
+	# keep in mind that the top of the file logically actually
+	# refers to the bottom of the file.  So the last line is
+	# actually the last network successfully connected too.
+	echo "\`date +'%D %T %p'\`	$1" >> "/etc/qdnet/qdnet.history"
+
+	# only keep the latest entries
+	HIST=\`cat '/etc/qdnet/qdnet.history'\`
+	if [ "\`echo "\$HIST" | wc -l\`" -gt $MAX_HISTORY ]
+	then
+		echo "\$HIST" | tail -n $MAX_HISTORY >'/etc/qdnet/qdnet.history'
+	fi
+
+	# log this event
+	logger "Succeeded in connecting to $1"
+else
+	cmd="notify-send -i /usr/share/qdnet/icons/signal-red-64.png 'Unable to connect' 'Unable to connect to $1'"
+	echo -n "unable to connect."
+	echo "$3" | grep -e "Unsecured" >/dev/null	
+	if [ \$? -ne 0 ]; then echo -n " verify password is correct."; fi
+	echo ""
+	
+	# log this event
+	logger "Failed to connect to $1"
+fi
+
+# run the after script for all qdnet group users
+users=`grep 'qdnet:' /etc/group | cut -d':' -f 4 | tr ',' ' '`
+for user in $users
+do
+	user_home_dir="`su $user -c 'echo $HOME'`"
+	su $user -c "\$user_home_dir/.qdnet/after" 2>/dev/null
+done
+
+# note to self: this needs to be changed eventually because
+# this assumes the user is running X, it also assumes they
+# they are not the only ones running X.  I think sending
+# a notification to all users on the system would be better
+for user in \`who | cut -d' ' -f1 | sort | uniq\`
+do
+	su $user -c "\$cmd"
+done
+SCRIPT_FILE
+fi
+
+chmod g+x "/tmp/qdnet/scripts/$1"
+}
+
+# converts time in days, time in hours, or time in minutes
+# to time in seconds
+to_seconds() {
+	ACTUAL_VALUE=`echo $1 | sed "s/\([[:digit:]]*\)[[:alpha:]]/\1/"`
+	ACTUAL_SUFFIX=`echo $1 | sed "s/[[:digit:]]*\([[:alpha:]]\)/\1/"`
+	case $ACTUAL_SUFFIX in
+		d) ANSWER=`echo "$ACTUAL_VALUE * 86400" | bc`;;
+		h) ANSWER=`echo "$ACTUAL_VALUE * 3600" | bc`;;
+		m) ANSWER=`echo "$ACTUAL_VALUE * 60" | bc`;;
+		s) ANSWER=$ACTUAL_VALUE;;
+		*) echo -n "Error!" >&2
+	esac
+}
+
+# this function returns the icon to use based on
+# a network's signal strength
+logoType() {
+	logoLock=""
+	if [ "$2" == "on" ]
+	then
+		logoLock="-lock"
+	fi
+
+	if [ $1 -le 0 ]
+	then
+		QUALITY_ICON="signal-gray-64$logoLock.png"
+	elif [ $1 -le 25 ]
+	then
+		QUALITY_ICON="signal-red-64$logoLock.png"
+	elif [ $1 -le 50 ]
+	then
+		QUALITY_ICON="signal-orange-64$logoLock.png"
+	elif [ $1 -le 75 ]
+	then
+		QUALITY_ICON="signal-yellow-64$logoLock.png"
+	else
+		QUALITY_ICON="signal-green-64$logoLock.png"
+	fi
+}
+
+# cleans all old network icons and scripts from the folders
+cleanNetworks() {
+
+        net_dir="/tmp/qdnet/networks/"
+        script_dir="/tmp/qdnet/scripts/"
+
+        # get current timestamp so that it be can compared with the creation
+        # timestamp of the network file
+        currtime=`date '+%s'`
+
+        # for each network file, check if the timeout happend and if so, remove the network data
+        for file in $net_dir*
+        do
+                if [ "$file" == "$net_dir*" ]; then
+                        break
+                fi
+
+                # get network timestamp and wifi_name
+                ftimestamp=`grep Timestamp= "$file" 2>/dev/null | sed -e "s/^Timestamp=\([[:digit:]]*\)/\1/g"`
+                wifi_name=`grep Name= "$file" 2>/dev/null | sed -e "s/^Name=\([[:print:]]*\)/\1/g"`
+
+                # compute difference in timestamps
+                diff_t=`expr $currtime - $ftimestamp`
+
+                # if it timed out ( more 30 seconds since network has been last regenerated)
+                # remove both, the network file (icon) and the script
+                if [ $diff_t -gt $TIMEOUT ]; then
+                        rm "$file"
+                        rm "$script_dir$wifi_name"
+                fi
+        done
+
+}
+
+# creates the virtual device used by qdnet for the communicating
+# between the daemon and user client
+createDevice() {
+if [[ ! -p $1 ]]; then
+	mkfifo $1
+	chown root:qdnet $1
+	chmod g+w $1
+fi
+}
+
+# creates the networks and scripts directories in /tmp on the
+# temporary pseudo filesystem for holding available networks
+createNetworksDir() {
+if [[ ! -d "/tmp/qdnet/networks" ]]; then
+	mkdir -p /tmp/qdnet/networks
+fi
+
+if [[ ! -d "/tmp/qdnet/scripts" ]]; then
+	mkdir -p /tmp/qdnet/scripts
+fi
+}
+
+#################### Program Area ########################
+
+# get parameters
+help="\t-v select verbose operation.\n
+\t-n do not keep logfile for a session.\n 
+\t-f manually specify the logfile.\n
+\t-V print out version information."
+version="QD Networking v0.3, Copyright (c) 2010 Alwyn Malachi Berkeley Jr., Marcos Di Pietro, Lionel Gregory Nimmo, Leonardo Sanchez"
+
+while getopts "vnf:V" opts; do
+case $opts in
+  v) VERBOSE=0;;
+  n) KEEP_LOG=1;;
+  f) LOG_LOC="$OPTARG";;
+  V) echo -e $version; exit 0;;
+  *) echo -e $help; exit 1;;
+esac
+done
+
+# source the configuration for the program
+source /etc/qdnet/qdnet.conf
+
+# convert the config's timeout to seconds for use with qdnet
+to_seconds "$TIMEOUT"
+TIMEOUT=$ANSWER
+
+# listen for networks users want to connect too
+qdlistener &
+
+# create virtual device
+createDevice "/dev/qdnet"
+
+# create the necessary temporary directories
+createNetworksDir
+
+# generate the network icon for the desktop
+generate_icon 'none' '0' 'networks_icon' 'none'
+
+# if we ever get disconnected, try to reconnect to the network
+TRY_AGAIN=0
+
+# bring wlan0 up
+ifconfig wlan0 up
+sleep 2s
+
+# start autoconnection script
+qdchkhist &
+
+# main loop
+while true
+do
+	# clean out all old networks
+	cleanNetworks
+
+	# scan for available networks
+	scan_networks
+	echo "$LAST_SCAN" | {
+		# for each network create icons & scripts indicative
+		# of the available networks
+		while read line
+		do
+			essid=`echo "$line" | cut -f1`
+			quality=`echo "$line" | cut -f2`
+			encryption=`echo "$line" | cut -f3`
+			enc_type=`echo "$line" | cut -f4`
+			generate_icon "$essid" "$quality" "$encryption" "$enc_type"
+			generate_script "$essid" "$encryption" "$enc_type"
+			echo "$essid $quality $encryption" "$enc_type"
+		done
+
+		generate_icon "Disconnect" "-1" "no" "none"
+		generate_script "Disconnect" "no" "none"
+	}
+
+	# wait/timeout before looking again
+	TIMEOUT_STRIPPED=`echo "$TIMEOUT" | sed -e "s/s//"`
+	for i in `seq 1 $TIMEOUT_STRIPPED`
+	do
+		sleep 1s
+		link_status=`cat /proc/net/wireless | grep wlan0 | awk '{print $3}' | sed -e 's/\.//'`
+
+		if [ $link_status -ne 0 ]
+		then
+			echo "Still online"
+			TRY_AGAIN=0
+		else
+			# go on with the disconnect procedure only if we should
+			if [ $TRY_AGAIN -eq 0 ]
+			then
+
+				# notify the users that connection is currently offline
+				echo "Currently offline"
+				DISCONNECTED_NETWORK=`tail -n1 '/etc/qdnet/qdnet.history'  | cut -d'	' -f 2`
+				notify-send -i /usr/share/qdnet/icons/signal-red-64.png 'Network Disconnected' "Attempting to reconnect to $DISCONNECTED_NETWORK"
+
+				# try to reconnect
+				$DHCP_CLIENT wlan0
+
+				if [ $? -eq 0 ]
+				then
+					notify-send -i /usr/share/qdnet/icons/signal-green-64.png 'Network Connected' "Connected back to $DISCONNECTED_NETWORK"
+				else
+					notify-send -i /usr/share/qdnet/icons/signal-red-64.png 'Network Disconnected' "Failed to reconnect to $DISCONNECTED_NETWORK"
+					TRY_AGAIN=1
+					break; # note to self: wait for the rest of the timeout
+				fi
+			fi
+		fi
+	done
+done
+
+#################### Testing Area ########################

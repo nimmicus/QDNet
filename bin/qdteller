@@ -1,0 +1,7 @@
+#!/bin/bash
+
+
+# ensure that only root can run this program
+. qdcheck
+
+echo "$1" > /dev/qdnet

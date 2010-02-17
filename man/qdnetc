@@ -1,0 +1,25 @@
+qdnetc 8 "February 2010" "" "Linux System Administrator's Manual"
+NAME
+qdnetc - terminal interface for the qdnet daemon
+SYNOPSIS
+qdnetc target
+.br
+
+DESCRIPTION
+The qdnetc program is designed to use the information collected
+by the qdnet daemon to connect to networks.
+
+Note: If a number is sent as a parameter to the program then
+the program will use that number as the nid (network id)
+and attempt to connect to that network.
+
+SEE ALSO
+qdnetd(8)
+
+AUTHOR
+Originally authored by Alwyn Malachi Berkeley Jr., Marcos Di Pietro
+.br
+Lionel Gregory Nimmo, and Leonardo Sanchez.
+.br
+
+Currently maintained by the Panther Linux Users Group

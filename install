@@ -1,0 +1,102 @@
+#!/bin/bash
+# QDNet installation script
+
+DEPENDENCIES=( dhcpcd bc )
+
+missing_dependencies=0
+
+echo Checking for dependencies...
+
+for dep in ${DEPENDENCIES[*]}
+do
+
+	which $dep &> /dev/null
+	ret=$?
+	if [ $ret -eq 1 ]
+	then
+		echo $dep is missing, please install it.
+		missing_dependencies=1
+	fi
+done
+
+if [ $missing_dependencies -eq 1 ]
+then
+	exit 1
+fi
+
+echo Installing qdnet...
+mkdir -p /etc/qdnet
+cp -r ./qdnet_etc/* /etc/qdnet/
+
+mkdir -p /usr/share/qdnet
+cp -r ./share/qdnet/* /usr/share/qdnet/
+
+mkdir -p /opt/qdnet/bin
+cp -r ./bin/* /opt/qdnet/bin/
+
+# note to self: may need gzip man pages instead of bz2
+mkdir -p /opt/qdnet/man8
+cp -r ./man/*.bz2 /opt/qdnet/man8/
+
+ln -s /opt/qdnet/bin/qdnetd /usr/sbin/qdnetd &> /dev/null
+ln -s /opt/qdnet/bin/qdlistener /usr/sbin/qdlistener &> /dev/null
+ln -s /opt/qdnet/bin/qdlist /usr/sbin/qdlist &> /dev/null
+ln -s /opt/qdnet/bin/qdteller /usr/sbin/qdteller &> /dev/null
+ln -s /opt/qdnet/bin/qdask /usr/sbin/qdask &> /dev/null
+ln -s /opt/qdnet/bin/qdcheck /usr/sbin/qdcheck &> /dev/null
+ln -s /opt/qdnet/bin/qdenc /usr/sbin/qdenc &> /dev/null
+ln -s /opt/qdnet/bin/qdnetc /usr/bin/qdnetc &> /dev/null
+ln -s /opt/qdnet/bin/qdchkhist /usr/sbin/qdchkhist &> /dev/null
+ln -s /opt/qdnet/man8/qdnetd.8.bz2 /usr/share/man/man8/qdnetd.8.bz2 &> /dev/null
+ln -s /opt/qdnet/man8/qdnetc.8.bz2 /usr/share/man/man8/qdnetc.8.bz2 &> /dev/null
+
+#echo Updating manpage database
+#updatedb
+
+echo Creating qdnet group
+groupadd qdnet &> /dev/null
+
+#added by Leo
+#echo Adding user to qdnet group
+#echo Input user name:
+#read USR_NAME
+#useradd -G qdnet $USR_NAME 
+
+
+echo Creating devices
+mkfifo /dev/qdnet &> /dev/null
+
+echo Setting permissions
+chown root:qdnet -R /etc/qdnet/
+chmod 644 -R /etc/qdnet/
+chmod 600 /etc/qdnet/qdnet.pwd
+chown root:qdnet /dev/qdnet
+chmod 420 /dev/qdnet
+chown root:qdnet -R /opt/qdnet/bin/
+chmod 500 /opt/qdnet/bin/*
+chmod 550 /opt/qdnet/bin/qdteller
+chmod 550 /opt/qdnet/bin/qdnetc
+
+#added by Leo
+echo "Creating encryption keys"
+qdcrypter -g
+#encrypt the password file
+echo "Encrypting password file"
+qdcrypter -e /etc/qdnet/qdnet.pwd
+
+cat <<HEREDOC
+  ___  ____  _   _      _   
+ / _ \|  _ \| \ | | ___| |_ 
+| | | | | | |  \| |/ _ \ __|
+| |_| | |_| | |\  |  __/ |_ 
+ \__\_\____/|_| \_|\___|\__|
+ by Panther Linux User Group 
+
+Installation completed!
+======================
+If you would like a regular user to be able to use qdnet
+just add that user to the qdnet group.
+ 
+Have fun!
+
+HEREDOC

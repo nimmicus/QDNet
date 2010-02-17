@@ -1,0 +1,27 @@
+#!/bin/bash
+# auto connects to the most recent network logged in /etc/qdnet/qdnet.history
+# given that the network is with presently available for connection.
+
+# ensure that only root can run this program
+. qdcheck
+
+# source qdnet configuration file
+source /etc/qdnet/qdnet.conf
+
+# wait for qdnetd to build scripts for local networks. 
+# add a offset of 10s due to overhead of qdnetd intialization.
+TIMEOUT=`echo "$TIMEOUT" | sed -e "s/s//g"`
+sleep "`expr $TIMEOUT + 10`s"
+
+HISTORY=`cat /etc/qdnet/qdnet.history | sort -r`
+
+while read line; do
+	essid=`echo "$line" | cut -d'	' -f2`
+
+	# if network listed in history is within range, connect to it.
+	ls "/tmp/qdnet/scripts/$essid" 2>/dev/null 1>/dev/null
+	if [ $? -eq 0 ]; then
+		"/tmp/qdnet/scripts/$essid"
+		break
+	fi
+done <<< "$HISTORY"

@@ -1,0 +1,9 @@
+#!/bin/bash
+
+ROOT_UID=0 # root always has $UID 0.
+E_NOT_ROOT=126 # this exit code will indicate that the user is not root
+
+if [ $UID -ne $ROOT_UID ]; then
+	echo "Error -- You are not the root user."
+	exit $E_NOT_ROOT
+fi

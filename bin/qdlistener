@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# ensure that only root can run this program
+. qdcheck
+
+# connect to the network currently in the virtual device (pipe)
+while true
+do
+	if read line < /dev/qdnet; then
+		if [[ "$line" == 'quit' ]]; then
+			echo "SHOULD END PROGRAM NOW" # note to self: end program here
+		fi
+		line=`echo "$line" | sed -e "s/\.*\///g"`
+		echo "Running /tmp/qdnet/scripts/$line"
+		"/tmp/qdnet/scripts/$line"
+	fi
+done

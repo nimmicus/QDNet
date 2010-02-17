@@ -1,0 +1,128 @@
+#!/bin/bash
+#Commad-line interface for qdnet.
+
+E_NO_NETWORKS=124
+
+build_network_list() {
+i=0
+# stores the available networks $NETWORKS, 
+# seperating unique networks with an *
+NETWORKS=`ls -1 /tmp/qdnet/scripts/ | tr " " "_" | tr "\n" " "` # why won't \t work??
+
+# creates a string array, $IDS, to store both the nid and essid
+# of each available network
+for network in $NETWORKS; do
+	i=`expr $i + 1`
+	network=`echo "$network" | tr "_" " "`
+	IDS=`echo -e "$IDS$i\t$network*"`
+done
+}
+
+# notify user of available networks
+print_networks() {
+cat <<HEADING
+   ___  ____  _   _      _   
+  / _ \|  _ \| \ | | ___| |_ 
+ | | | | | | |  \| |/ _ \ __|
+ | |_| | |_| | |\  |  __/ |_ 
+  \__\_\____/|_| \_|\___|\__|
+
+QDNET Terminal Network Manager. Available networks listed below.
+HEADING
+
+if [ $i -eq 0 ]
+then
+	echo -e "\nNo networks found."
+	exit $E_NO_NETWORKS
+else
+	echo -e "\nnid\tnetworks\n$IDS" | tr "*" "\n"	
+fi
+}
+
+# check if nid was passed as parameter. if nid not passed then prompt for one.
+get_nid() {
+if [ -z "$1" ]
+then
+	# prompt for and save users selection
+	echo -n -e "Enter NID to connect to: "
+	read choice
+else
+	choice="$1"
+fi
+}
+
+check_pwd () {
+ESSIDS=`awk -F '\t' '{print $1}' "$PASSWD_LOC/qdnet.pwd" | tr " " "_"`
+for essid in $ESSIDS; do
+	essid=`echo $essid | tr "_" " "`
+	if [ "$essid" == "$1" ]; then
+		return
+	fi
+done
+
+# don't prompt for password unless necessary
+ENC_TYPE=`grep "/tmp/qdnet/networks/$1.desktop" -e "^Enc_Type=" | \
+sed -e 's/Enc_Type=\([[:print:]]\)/\1/'`
+if [ "$ENC_TYPE" == "Unsecured" ]
+then
+	return
+fi
+
+# ask for password
+echo -n -e "$1 is an encrypted network. Enter password: "
+read pass
+echo "$1	$pass" >> "$PASSWD_LOC/qdnet.pwd"
+echo "password saved."
+}
+
+# connect to the network associated with the nid selected.
+connect_to_nid () {
+valid=0
+TEMP=`echo "$IDS" | tr " " "_" | tr "\t" " " | tr "*" " "`
+
+TIMES_TO_LOOP=`echo "$TEMP" | wc -w`
+TIMES_TO_LOOP=`echo "$TIMES_TO_LOOP / 2" | bc`
+TIMES_TO_LOOP=`expr $TIMES_TO_LOOP - 1`
+for base_spot in `seq 0 $TIMES_TO_LOOP`
+do
+	i=`echo "$base_spot * 2 + 1" | bc`
+	nid=`echo "$TEMP" | cut -d ' ' -f $i`
+	j=`expr $i + 1`
+	network=`echo "$TEMP" | cut -d ' ' -f $j`
+
+	if [ "$choice" == "$nid" ]
+	then
+		#run $network script
+		valid=1
+		network=`echo "$network" | tr "_" " "`
+		check_pwd "$network"
+		echo "attempting connection to $network..."
+		"/tmp/qdnet/scripts/$network" 2>/dev/null
+	fi
+done
+# force a loopback or exit??
+if [ $valid -eq 0 ]
+then
+	echo -e "$choice is not a valid NID.\nExiting qdnetc."
+fi
+}
+###################################### PROGRAM ################################################
+# source the configuration for the program
+source /etc/qdnet/qdnet.conf
+
+# build the network list the user has to choose from
+build_network_list
+
+# If nid passed as parameter, then connect to that network. If no nid passed, then prompt user
+# for nid and connect.
+if [ -n "${1+x}" ]
+then
+	#selection made
+	get_nid $1
+else
+	#no selection made
+	print_networks
+	get_nid
+fi
+# add functionality for checking encryption and prompting for password if necessary
+connect_to_nid

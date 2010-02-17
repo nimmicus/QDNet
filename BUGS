@@ -1,0 +1,7 @@
+Known Bugs:
+Turning off wireless card through hardware switch is seen as card being busy
+Gentoo init script takes long period of time to end daemon
+Starting qdnetworking before X starts results qdnet unable to find X session
+So much happens in a loop that the timestamp forces all icons to be refreshed
+Continuous "Network Disconnect" libnotify notifications (online test to sensitive)
+Continuous "Still online" message from qdnetd (online test to insensitive)

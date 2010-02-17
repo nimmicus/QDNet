@@ -1,0 +1,55 @@
+qdnetd 8 "February 2010" "" "Linux System Administrator's Manual"
+NAME
+qdnetd - find & create icons for all the available networks
+SYNOPSIS
+qdnetd [-vn]
+
+qdnetd [-f newtargetlogfile] 
+
+qdnetd [-v] [--verbose]
+
+qdnetd [-V] [--version]
+
+qdnetc (see separate man page)
+.br
+
+DESCRIPTION
+The qdnetd daemon is designed to scan for available wireless
+networks and create icons symbolizing each network that is
+available for connecting too.
+
+Note:  To connect to a network using the GUI interface a user
+needs to double click on the 'My Networks' icon on the desktop
+and also be a member of the qdnet group on the system.
+.br
+
+OPTIONS
+-v select verbose operation.
+
+-n do not keep logfile for a session.
+
+-f manually specify the logfile.
+
+-V print out version information.
+
+FILES
+/etc/qdnet/qdnet.config
+
+/etc/qdnet/qdnet.history
+
+/etc/qdnet/qdnet.pwd
+
+/etc/qdnet/wpa_supplicate.conf
+
+/var/log/qdnet.log
+
+SEE ALSO
+qdnetc(8)
+
+AUTHOR
+Originally authored by Alwyn Malachi Berkeley Jr., Marcos Di Pietro
+.br
+Lionel Gregory Nimmo, and Leonardo Sanchez.
+.br
+
+Currently maintained by the Panther Linux Users Group
