@@ -10,7 +10,7 @@ dhcp_client=0
 echo Checking for dependencies...
 
 // list all dependencies (NOT INCLUDING DHCP CLIENTS)
-for dep in bc
+for dep in bc zenity
 do
 
 	type $dep &> /dev/null
