@@ -1,0 +1,80 @@
+#!/bin/bash
+
+#gpg notes:
+# to specify the location of the .gnupg directory...
+#gpg --homedir $DIR <TASK>
+#
+#To list keys.....
+#gpg --homedir $DIR --list-keys would list the keys 
+#contained in the gpg db files located at $DIR
+#
+#To copy all of the keys (private and public) for a given keyring, 
+#you only need to copy the directory to where you want it... 
+#
+#NOTE: each user has their own gpg directory
+#so specifying the homedir for qdnet will
+#not affect other users at all
+
+. qdcheck
+
+PGP_USR="qdnet"
+#for test purposes only!
+QDNET_HOME="/etc/qdnet"
+QDNET_GPG="$QDNET_HOME/.gnupg"
+
+#Syntax: gpg [options] [files]
+#`gpg --homedir $QDNET_GPG <TASK>`
+#-r     Encrypt  for user id name
+gpgopts="--homedir $QDNET_GPG -r $PGP_USR"
+
+#generate a new key pair
+keygen(){
+keygen="--gen-key"
+gpg "$keygen $gpgopts"
+}
+
+#encrypts file for qdnet user
+#remember that the next argument 
+#should be the file being encrypted!
+crypt() {
+crypt="--encrypt"
+gpg "$crypt $gpgopts"
+}
+
+#decrypts file for qdnet user
+#remember that the next argument 
+#should be the file being decrypted!
+decrypt(){
+decrypt="decrypt" 
+gpg "$decrypt $gpgopts"
+}
+
+#lists all keys
+listkeys(){
+list ="--list-keys"
+gpg "$list $gpgopts"
+}
+
+#delete all keys
+deletekeys(){
+delkey="--delete-keys --delete-secret-keys"
+gpg "$delkey $gpgopts"
+}
+
+help="\t-g to generate keys\n
+\t-c to encrypt a file\n 
+\t-d to decrypt a file\n
+\t-l to list keys\n
+\t-r to remove keys from public keyring\n
+\t-h to show this usage message"
+
+while getopts "g:c:d:l:r:" opts; do
+case $opts in
+  g) keygen;;
+  c) crypt;;
+  d) decrypt;;
+  l) listkeys;;
+  r) deletekeys;;
+  *) echo -e $help; exit 1;;
+esac
+done
