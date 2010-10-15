@@ -89,7 +89,6 @@ Encoding=UTF-8
 Icon=/usr/share/qdnet/icons/$QUALITY_ICON
 Timestamp=$timestamp
 ICON_FILE
-
 chown root:qdnet "/tmp/qdnet/networks/$1.desktop"
 chmod g+x "/tmp/qdnet/networks/$1.desktop"
 }
