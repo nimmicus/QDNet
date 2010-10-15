@@ -1,3 +1,4 @@
 #!/bin/bash
 
+# this script is run just before disconnecting from a network
 mkdir ~/.qdnet/disconnect.d
