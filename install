@@ -9,7 +9,7 @@ missing_dependencies=0
 dhcp_client=0
 echo Checking for dependencies...
 
-// list all dependencies (NOT INCLUDING DHCP CLIENTS)
+# list all dependencies (NOT INCLUDING DHCP CLIENTS)
 for dep in bc zenity
 do
 
@@ -26,19 +26,18 @@ then
 	exit 1
 fi
 
-// list all dhcp clients that you want to search for.
+# list all dhcp clients that you want to search for.
 for client in dhclient dhcpcd
 do
 	type $client &> /dev/null
 	if [ $? -eq 0 ]
 	then
-		cat ../qdnet_etc/qdnet.conf | sed -e "s/^DHCP_CLIENT=\([[:alpha:]]*\)/DHCP_CLIENT=$client/" >> ../qdnet_etc/qdnet.tmp
-		mv ../qdnet_etc/qdnet.tmp ../qdnet_etc/qdnet.conf
 		dhcp_client=1;
+		break;
 	fi
 done
 
-if [ $dhcp_client -eq 1 ]
+if [ $dhcp_client -ne 1 ]
 then
 	echo No DHCP client found. Please install one.
 	exit 1
@@ -62,6 +61,11 @@ cp -r ./qdnet_etc/* /etc/qdnet/
 chown root:qdnet -R /etc/qdnet/
 chmod 644 -R /etc/qdnet/
 chmod 600 /etc/qdnet/qdnet.pwd
+touch /tmp/qdnet.tmp
+cat /etc/qdnet/qdnet.conf | sed -e "s/^DHCP_CLIENT=\([[:alpha:]]*\)/DHCP_CLIENT=$client/" >> /tmp/qdnet.tmp
+mv /tmp/qdnet.tmp /etc/qdnet/qdnet.conf
+chmod 644 /etc/qdnet/qdnet.conf
+
 
 echo Copying icon set
 mkdir -p /usr/share/qdnet
