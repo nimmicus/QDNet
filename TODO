@@ -28,14 +28,15 @@ Z Encrypt qdnet.pwd
 X Create man pages
 Disregard networks that are blank names
 Allow user to simply be offline
-Allow user to simply be offline
+Allow user to reconnect online using qdhistory
 Check everything especially error handling
-Run daemon upon boot (Ubuntu, Arch)
-Package for (Ubuntu, Arch)
+Run daemon upon boot (Ubuntu)
+Package for (Ubuntu)
 
 0.41 Alpha
 X Run daemon upon boot (Gentoo)
-Package for Gentoo
+Run Daemon upon boot (Arch)
+Package for (Arch, Gentoo)
 User config overrides system config
 Security work on the pipe (harsher checks on what comes in)
 Fixes
@@ -46,10 +47,15 @@ Connect to hidden networks
 Fixes
 
 0.43 Alpha
+Know if wireless button was turned on/off and act accordingly
 Handle wired network
 Fixes
 
-0.44-0.49 Alpha
+0.45 Alpha
+Support multiple interfaces
+Fixes
+
+0.45-0.49 Alpha
 Fixes
 
 0.5 Beta

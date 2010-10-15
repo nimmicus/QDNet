@@ -10,5 +10,6 @@ Continuous "Network Disconnect" libnotify notifications (online test to sensitiv
 	- While at it letting the qdhistory script automatically
 	  connect you to a dropped network would be best, its simpler
 Theres no way to tell qdnet only to list icons but not connect
+	- If user clicked Disconnect then don't run qdhistory
 Continuous "Still online" message from qdnetd (online test to insensitive)
 Can't connect to ESSID's work a backslash in the name like "\x00"
