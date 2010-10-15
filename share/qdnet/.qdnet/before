@@ -1,3 +1,4 @@
 #!/bin/bash
 
+# this script is run before connecting to a network
 mkdir ~/.qdnet/before.d
