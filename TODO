@@ -26,6 +26,7 @@ X QDNet logfile /var/log
 0.4 PreAlpha
 Z Encrypt qdnet.pwd
 X Create man pages
+Disregard networks that are blank names
 Allow user to simply be offline
 Allow user to simply be offline
 Check everything especially error handling
