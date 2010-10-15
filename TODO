@@ -1,5 +1,7 @@
 Quick & Dirty Networking Todo List
 
+X = Done      Z = Discontinued Task
+
 0.2
 X Change the removal of old networks to the same as the users timeout
 X Add disconnect network
@@ -20,37 +22,40 @@ X Setup getopts
 X Notify when connection lost
 X Automatically reconnect
 X QDNet logfile /var/log
-X Connect at boot (Gentoo)
 
-0.4 Alpha
-Encrypt qdnet.pwd
-Check everything especially error handling & use variables
+0.4 PreAlpha
+Z Encrypt qdnet.pwd
 X Create man pages
-Package for Gentoo
-Log everything to QDNet logfile
+Allow user to simply be offline
+Allow user to simply be offline
+Check everything especially error handling
+Run daemon upon boot (Ubuntu, Arch)
+Package for (Ubuntu, Arch)
 
 0.41 Alpha
-Connect at boot (Arch, Ubuntu)
-Package for Arch, Ubuntu
+X Run daemon upon boot (Gentoo)
+Package for Gentoo
+User config overrides system config
+Security work on the pipe (harsher checks on what comes in)
 Fixes
 
-0.43-4 Alpha
-Fixes
-
-0.45 Alpha
+0.42 Alpha
+Log important events to system log
 Connect to hidden networks
+Fixes
+
+0.43 Alpha
 Handle wired network
-
-0.46-9 Alpha
 Fixes
 
-0.5
+0.44-0.49 Alpha
 Fixes
 
-0.6
+0.5 Beta
 Fixes
-
-0.7 Beta
 
 0.X
-VPN capabilities
+VPN capabilities (maybe)
+Create your own network (maybe)
+Bluetooth (maybe)
+Dbus (maybe)
