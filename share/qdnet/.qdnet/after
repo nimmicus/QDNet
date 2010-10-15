@@ -1,4 +1,4 @@
 #!/bin/bash
 
-# this script is run after disconnecting from a network
+# this script is run just after connecting from a network
 mkdir ~/.qdnet/after.d
