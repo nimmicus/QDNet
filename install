@@ -64,12 +64,13 @@ chmod 600 /etc/qdnet/qdnet.pwd
 touch /tmp/qdnet.tmp
 cat /etc/qdnet/qdnet.conf | sed -e "s/^DHCP_CLIENT=\([[:alpha:]]*\)/DHCP_CLIENT=$client/" >> /tmp/qdnet.tmp
 mv /tmp/qdnet.tmp /etc/qdnet/qdnet.conf
+chown root:qdnet /etc/qdnet/qdnet.conf
 chmod 644 /etc/qdnet/qdnet.conf
 
 
 echo Copying icon set
 mkdir -p /usr/share/qdnet
-cp -r ./share/qdnet/* /usr/share/qdnet/
+cp -pr ./share/qdnet/* /usr/share/qdnet/
 
 echo Installing binaries
 mkdir -p /tmp/qdnet
@@ -78,12 +79,12 @@ chown root:qdnet -R /tmp/qdnet/*
 chmod 500 /tmp/qdnet/*
 chmod 550 /tmp/qdnet/qdteller
 chmod 550 /tmp/qdnet/qdnetc
-cp -r /tmp/qdnet/* /usr/bin/
+cp -pr /tmp/qdnet/* /usr/bin/
 rm -r /tmp/qdnet
 
 # note to self: may need gzip man pages instead of bz2
 echo Installing man pages
-cp -r ./man/*.bz2 /usr/share/man/man8/
+cp -pr ./man/*.bz2 /usr/share/man/man8/
 
 echo Creating devices
 mkfifo /dev/qdnet &> /dev/null
