@@ -1,33 +1,29 @@
 #!/bin/bash
 
 echo Removing manpages
-rm -f /opt/qdnet/man8/qdnetd.8.bz2
-rm -f /opt/qdnet/man8/qdnetc.8.bz2
-
-echo Removing symbolic link files
-rm -f /usr/sbin/qdnet
-rm -f /usr/sbin/qdlistener
-rm -f /usr/sbin/qdlist
-rm -f /usr/sbin/qdteller
-rm -f /usr/sbin/qdask
-rm -f /usr/sbin/qdcheck
-rm -f /usr/sbin/qdenc
-rm -f /usr/bin/qdnetc
-rm -f /usr/sbin/qdchkhist
 rm -f /usr/share/man/man8/qdnetd.8.bz2
 rm -f /usr/share/man/man8/qdnetc.8.bz2
 
 echo Removing configuration files
 rm -rf /etc/qdnet
 
-echo Removing resource files
+echo Removing icon set
 rm -rf /usr/share/qdnet
 
 echo Removing device
 rm -f /dev/qdnet
 
 echo Removing executables
-rm -rf /opt/qdnet
+rm -f /usr/bin/qdask
+rm -f /usr/bin/qdcheck
+rm -f /usr/bin/qdchkhist
+rm -f /usr/bin/qdcrypter
+rm -f /usr/bin/qdenc
+rm -f /usr/bin/qdlist
+rm -f /usr/bin/qdlistener
+rm -f /usr/bin/qdteller
+rm -f /usr/bin/qdnetc
+rm -f /usr/bin/qdnetd
 
 echo Remove qdnet group
 groupdel qdnet
