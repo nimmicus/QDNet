@@ -4,4 +4,11 @@ Gentoo init script takes long period of time to end daemon
 Starting qdnetworking before X starts results qdnet unable to find X session
 So much happens in a loop that the timestamp forces all icons to be refreshed
 Continuous "Network Disconnect" libnotify notifications (online test to sensitive)
+	- I think this is happening because TRY_AGAIN starts as 0
+	  so when you start off offline it thinks you dropped, setting
+          TRY_AGAIN to 1 should fix this
+	- While at it letting the qdhistory script automatically
+	  connect you to a dropped network would be best, its simpler
+Theres no way to tell qdnet only to list icons but not connect
 Continuous "Still online" message from qdnetd (online test to insensitive)
+Can't connect to ESSID's work a backslash in the name like "\x00"
